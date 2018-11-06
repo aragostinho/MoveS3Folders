@@ -1,7 +1,7 @@
 # MoveS3Folders
 A simple console program in C# .Net 4.5 to move entire folders (keynames) in AWS S3.
 This tool can move or copy easy all content inside (files/subfolders) from a bucket/keyname to another bucket/keyname.
-His implementation use S3DirectoryInfo Class from namespace Amazon.S3.IO. 
+MoveS3Folders uses S3DirectoryInfo Class from namespace Amazon.S3.IO. 
 
 For more details: https://docs.aws.amazon.com/sdkfornet1/latest/apidocs/html/T_Amazon_S3_IO_S3DirectoryInfo.htm
 
