@@ -6,7 +6,7 @@ MoveS3Folders uses S3DirectoryInfo Class from namespace Amazon.S3.IO.
 For more details: https://docs.aws.amazon.com/sdkfornet1/latest/apidocs/html/T_Amazon_S3_IO_S3DirectoryInfo.htm
 
 ## Global configuration (app.config)
-- AWSAccessKey:  Your access key supplied from IAM Role
+- *AWSAccessKey:  Your access key supplied from IAM Role
 - AWSSecretKey:  Your secret key supplied from IAM Role
 - AWSRegion:  The region name from AWS S3 region points (ex: sa-east-1)
     
