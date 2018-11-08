@@ -23,7 +23,7 @@ namespace MoveS3Folders.Core
             string _verbOperation = _moveFolder ? "Moving" : "Copying"; 
 
             BAmazonS3 oBAmazonS3 = new BAmazonS3(_AWSAccessKey, _AWSSecretKey);
-            Console.WriteLine($@"{_verbOperation} folder from '{bucketOrigin}/{keyNameOrigin}' to '{bucketDestination}/{bucketDestination}'");
+            Console.WriteLine($@"{_verbOperation} folder from '{bucketOrigin}/{keyNameOrigin}' to '{bucketDestination}/{keyNameDestination}'");
 
             if (_moveFolder)
                 return oBAmazonS3.MoveFolder(bucketOrigin, keyNameOrigin, bucketDestination, keyNameDestination, _overWriteDestinationFolder, _regionEndPoint);
