@@ -126,7 +126,7 @@ namespace MoveS3Folders.Core
                 using (var client = new AmazonS3Client(_awsAccessKey, _awsSecretAccessKey, region))
                 {
                     S3DirectoryInfo origin = new S3DirectoryInfo(client, sourceBucket, sourceKey.ToSlashesFileSystem());
-                    S3DirectoryInfo target = new S3DirectoryInfo(client, destinationBucket, destinationKey.RemoveLastFolder().ToSlashesFileSystem());
+                    S3DirectoryInfo target = new S3DirectoryInfo(client, destinationBucket, destinationKey.ToSlashesFileSystem());
                     target.Create();
                     operationResponse.S3DirectoryInfo = origin.MoveTo(target);
                 }
