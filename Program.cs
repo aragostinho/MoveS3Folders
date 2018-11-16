@@ -24,7 +24,7 @@ namespace MoveS3Folders
                 Stopwatch stopWatch = new Stopwatch();
                 stopWatch.Start();
                 Console.WriteLine("Please wait.....\n");
-                OperationResponse result = MoveToS3.CopyOrMoveObjects(args[0], args[1], args[2], args[3], args[4], args[5]);
+                OperationResponse result = MoveToS3.CopyOrMoveObjects(args[0], args[1], args[2], args[3], args[4], args[5], args[6]);
                 stopWatch.Stop();
 
                 if (result.StatusCode != System.Net.HttpStatusCode.OK)
@@ -64,7 +64,8 @@ namespace MoveS3Folders
                 args[2] = ConfigurationManager.AppSettings["KeyNameOrigin"];
                 args[3] = ConfigurationManager.AppSettings["KeyNameDestination"];
                 args[4] = ConfigurationManager.AppSettings["MoveFolder"];
-                args[5] = ConfigurationManager.AppSettings["OverwriteDestinationFolder"]; 
+                args[5] = ConfigurationManager.AppSettings["OverwriteDestinationFolder"];
+                args[6] = ConfigurationManager.AppSettings["MultiThreadFileTransferring"];
             } 
 
             return args;

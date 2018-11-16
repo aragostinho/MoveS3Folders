@@ -19,6 +19,43 @@ namespace MoveS3Folders.Core
         private string _awsSecretAccessKey;
         private AmazonS3Config config;
 
+        private static void CopyOrMoveFiles(IAmazonS3 client, S3DirectoryInfo origin, S3DirectoryInfo target, bool moveFiles, S3FileInfo file)
+        {
+            string currentFile = file.FullName.Replace($"{origin.Bucket.Name}:\\", string.Empty);
+            string originFolder = currentFile.Split('\\').First();
+            string targetFolder = target.FullName.Replace($"{target.Bucket.Name}:\\", string.Empty).Split('\\').First();
+            string newFile = currentFile.Replace(originFolder, targetFolder);
+            string verbOperation = moveFiles ? "moved" : "copied";
+
+            S3FileInfo fileOrigin = new S3FileInfo(client, origin.Bucket.Name, currentFile);
+
+            if (!moveFiles)
+                fileOrigin.CopyTo(new S3FileInfo(client, target.Bucket.Name, newFile), true);
+            else
+                fileOrigin.MoveTo(new S3FileInfo(client, target.Bucket.Name, newFile));
+
+            Console.WriteLine(string.Format("File {0} {1} to {2}", fileOrigin.FullName, verbOperation, newFile));
+        }
+
+        private void ParallelTransferring(IAmazonS3 client, S3DirectoryInfo origin, S3DirectoryInfo target, bool moveFiles = false)
+        {
+            if (origin.Parent.Name.Equals(origin.Bucket.Name))
+            {
+                Parallel.ForEach(origin.GetFiles(), file =>
+                {
+                    CopyOrMoveFiles(client, origin, target, moveFiles, file);
+                });
+            }
+            Parallel.ForEach(origin.GetDirectories(), folder =>
+            {
+                Parallel.ForEach(folder.GetFiles(), file =>
+                {
+                    CopyOrMoveFiles(client, origin, target, moveFiles, file);
+                });
+                ParallelTransferring(client, folder, target, moveFiles);
+            });
+        }
+
         private void IsValid(string awsAccessKey, string awsSecretAccessKey, string bucket, string key, RegionEndpoint region)
         {
             if (awsAccessKey.IsNullOrEmpty())
@@ -28,10 +65,10 @@ namespace MoveS3Folders.Core
                 throw new Exception("AwsSecretAccessKey must be defined");
 
             if (bucket.IsNullOrEmpty())
-                throw new Exception("BucketOrigin must be defined");  
+                throw new Exception("BucketOrigin must be defined");
 
             if (key.IsNullOrEmpty())
-                throw new Exception("KeyNameOrigin must be defined"); 
+                throw new Exception("KeyNameOrigin must be defined");
 
             if (region == null)
                 throw new Exception("AWSRegion must be defined");
@@ -69,13 +106,13 @@ namespace MoveS3Folders.Core
             config.ServiceURL = ConfigurationManager.AppSettings["AWSRegion"];
         }
 
-        public BAmazonS3(string pawsAccessKey, string pawsSecretAccessKey, string pRegion = null)
+        public BAmazonS3(string awsAccessKey, string awsSecretAccessKey, string region = null)
         {
-            _awsAccessKey = pawsAccessKey;
-            _awsSecretAccessKey = pawsSecretAccessKey;
+            _awsAccessKey = awsAccessKey;
+            _awsSecretAccessKey = awsSecretAccessKey;
 
             AmazonS3Config config = new AmazonS3Config();
-            config.ServiceURL = pRegion ?? ConfigurationManager.AppSettings["AWSRegion"];
+            config.ServiceURL = region ?? ConfigurationManager.AppSettings["AWSRegion"];
         }
 
         public OperationResponse DeleteFolder(string bucket, string key, RegionEndpoint region)
@@ -86,8 +123,8 @@ namespace MoveS3Folders.Core
                 this.IsValid(_awsAccessKey, _awsSecretAccessKey, bucket, key, region);
                 using (var client = new AmazonS3Client(_awsAccessKey, _awsSecretAccessKey, region))
                 {
-                    S3DirectoryInfo folder = new S3DirectoryInfo(client, bucket, key); 
-                    folder.Delete(true); 
+                    S3DirectoryInfo folder = new S3DirectoryInfo(client, bucket, key);
+                    folder.Delete(true);
                 }
                 operationResponse.StatusCode = System.Net.HttpStatusCode.OK;
             }
@@ -154,7 +191,7 @@ namespace MoveS3Folders.Core
             }
             return operationResponse;
         }
-         
+
         public OperationResponse CopyFolder(string sourceBucket, string sourceKey, string destinationBucket, string destinationKey, bool overwriteDestinationFolder, RegionEndpoint region)
         {
             var operationResponse = new OperationResponse();
@@ -168,8 +205,52 @@ namespace MoveS3Folders.Core
                 {
                     S3DirectoryInfo origin = new S3DirectoryInfo(client, sourceBucket, sourceKey.ToSlashesFileSystem());
                     S3DirectoryInfo target = new S3DirectoryInfo(client, destinationBucket, destinationKey.ToSlashesFileSystem());
-                    target.Create(); 
+                    target.Create();
                     operationResponse.S3DirectoryInfo = origin.CopyTo(target);
+                }
+                operationResponse.StatusCode = System.Net.HttpStatusCode.OK;
+            }
+            catch (AmazonS3Exception amazonS3Exception)
+            {
+                if (amazonS3Exception.ErrorCode != null &&
+                    (amazonS3Exception.ErrorCode.Equals("InvalidAccessKeyId") ||
+                    amazonS3Exception.ErrorCode.Equals("InvalidSecurity")))
+                {
+                    operationResponse.Message = "Please check the provided AWS Credentials. If you haven't signed up for Amazon S3, please visit http://aws.amazon.com/s3";
+                    operationResponse.StatusCode = System.Net.HttpStatusCode.InternalServerError;
+                }
+                else
+                {
+                    operationResponse.Message = amazonS3Exception.Message;
+                    operationResponse.StatusCode = System.Net.HttpStatusCode.InternalServerError;
+                }
+            }
+            catch (Exception oException)
+            {
+                operationResponse.Message = oException.Message;
+                operationResponse.StatusCode = System.Net.HttpStatusCode.InternalServerError;
+            }
+            return operationResponse;
+        }
+
+        public OperationResponse CopyFiles(string sourceBucket, string sourceKey, string destinationBucket, string destinationKey, bool moveFiles, bool overwriteDestinationFolder, RegionEndpoint region)
+        {
+            var operationResponse = new OperationResponse();
+            try
+            {
+                if (overwriteDestinationFolder)
+                    operationResponse = this.DeleteFolder(destinationBucket, destinationKey, region);
+
+                this.IsValid(_awsAccessKey, _awsSecretAccessKey, sourceBucket, sourceKey, destinationBucket, destinationKey, region);
+                using (var client = new AmazonS3Client(_awsAccessKey, _awsSecretAccessKey, region))
+                {
+                    S3DirectoryInfo origin = new S3DirectoryInfo(client, sourceBucket, sourceKey.ToSlashesFileSystem());
+                    S3DirectoryInfo target = new S3DirectoryInfo(client, destinationBucket, destinationKey.ToSlashesFileSystem());
+                    target.Create();
+                    this.ParallelTransferring(client, origin, target, moveFiles);
+                    if (moveFiles)
+                        this.DeleteFolder(sourceBucket, sourceKey.ToSlashesFileSystem(), region);
+
                 }
                 operationResponse.StatusCode = System.Net.HttpStatusCode.OK;
             }
