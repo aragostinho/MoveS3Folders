@@ -17,6 +17,7 @@ For more details: https://docs.aws.amazon.com/sdkfornet1/latest/apidocs/html/T_A
 - _KeyNameDestination_: The full keyname (folder) from target bucket.  It's possible to change the path destination.
 - _MoveFolder_:  if true move folders and files, if false copy folders and files
 - _OverwriteDestinationFolder_: if true removed folder in destination before copy/move folder. There's no overwrite method in S3DirectoryInfo class.
+- _MultiThreadFileTransferring_: if true multi thread file transfering is actived ableing a huge gain of perfomance significantly reducing elapsed time.
     
 ## On-demand command line (MoveS3Folders.exe -args)
 All args below will overwrite Pre-defined configuration:
@@ -26,7 +27,8 @@ All args below will overwrite Pre-defined configuration:
 - _keyNameDestination_: The full keyname (folder) from target bucket.  It's possible to change the path destination.
 - _moveFolder_:  true:  to move folders and files / false: to copy folders and files
 - _overwriteDestinationFolder_: The region name from AWS S3 region points. If defined will overwrite AWSRegion global configuration.
-
+- _multiThreadFileTransferring_: true: to active multi thread file transfering  
+    
 ```MoveS3Folders.exe bucketOrigin bucketDestination keyNameOrigin keyNameDestination moveFolder overwriteDestinationFolder```
 
 ### Example
