@@ -13,20 +13,20 @@ namespace MoveS3Folders.Core
     public static class MoveToS3
     {
 
-        public static OperationResponse CopyOrMoveObjects(string bucketOrigin, string bucketDestination, string keyNameOrigin, string keyNameDestination, string moveFolder, string overWriteDestinationFolder, string asyncFileTransferring)
+        public static OperationResponse CopyOrMoveObjects(string bucketOrigin, string bucketDestination, string keyNameOrigin, string keyNameDestination, string moveFolder, string overWriteDestinationFolder, string multiThreadFileTransferring)
         {
             string _AWSSecretKey = ConfigurationManager.AppSettings["AWSSecretKey"];
             string _AWSAccessKey = ConfigurationManager.AppSettings["AWSAccessKey"];
             var _regionEndPoint = Amazon.RegionEndpoint.GetBySystemName(ConfigurationManager.AppSettings["AWSRegion"]);
             bool _moveFolder = bool.Parse(moveFolder);
             bool _overWriteDestinationFolder = bool.Parse(overWriteDestinationFolder);
-            bool _asyncFileTransferring = bool.Parse(asyncFileTransferring);
+            bool _multiThreadFileTransferring = bool.Parse(multiThreadFileTransferring);
             string _verbOperation = _moveFolder ? "Moving" : "Copying";
 
             BAmazonS3 oBAmazonS3 = new BAmazonS3(_AWSAccessKey, _AWSSecretKey);
             Console.WriteLine($@"{_verbOperation} folder from '{bucketOrigin}/{keyNameOrigin}' to '{bucketDestination}/{keyNameDestination}'");
 
-            if (!_asyncFileTransferring)
+            if (!_multiThreadFileTransferring)
             {
                 if (_moveFolder)
                     return oBAmazonS3.MoveFolder(bucketOrigin, keyNameOrigin, bucketDestination, keyNameDestination, _overWriteDestinationFolder, _regionEndPoint);

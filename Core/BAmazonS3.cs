@@ -249,7 +249,9 @@ namespace MoveS3Folders.Core
                     target.Create();
                     this.ParallelTransferring(client, origin, target, moveFiles);
                     if (moveFiles)
+                    { 
                         this.DeleteFolder(sourceBucket, sourceKey.ToSlashesFileSystem(), region);
+                    }
 
                 }
                 operationResponse.StatusCode = System.Net.HttpStatusCode.OK;
